@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "kolektis": {
+      "command": "node",
+      "args": ["mcp-server/index.js"],
+      "env": {
+        "KOLEKTIS_API_KEY": "${KOLEKTIS_API_KEY}",
+        "KOLEKTIS_API_URL": "${KOLEKTIS_API_URL:-https://www.kolektis.com}"
+      }
+    }
+  }
+}

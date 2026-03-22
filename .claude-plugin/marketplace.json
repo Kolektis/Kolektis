@@ -1,0 +1,13 @@
+{
+  "name": "kolektis-marketplace",
+  "displayName": "Kolektis Plugins",
+  "description": "Plugins officiels Kolektis pour le traitement documentaire intelligent dans Claude.",
+  "author": "Monceau Litis",
+  "homepage": "https://www.kolektis.com",
+  "plugins": [
+    {
+      "name": "kolektis",
+      "source": "./"
+    }
+  ]
+}
