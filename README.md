@@ -1,76 +1,47 @@
-# Kolektis — Plugin Claude
+# Kolektis — PDF Document Processing for Claude
 
-Plugin officiel pour le traitement documentaire via l'API Kolektis.
-Permet d'analyser des PDFs (courriers, factures, sinistres, SDC...) directement depuis Claude.
+Automatically extract and structure data from PDF documents (invoices, letters, claims, contracts, statements...) directly within Claude.
 
-## Installation
+## What it does
 
-Depuis le marketplace Claude :
-1. Recherchez "Kolektis" dans les plugins
-2. Cliquez "Installer"
-3. Entrez votre clé API (obtenue sur https://www.kolektis.com/signup)
+Kolektis uses OCR + AI to process your PDFs and return clean, structured data. Just select a folder of PDFs, and Claude handles the rest:
 
-## Utilisation
+1. Sends each PDF to the Kolektis API for processing
+2. Extracts text (OCR) and structures the data
+3. Saves results locally
+4. Lets you ask questions about the extracted content
 
-Dites simplement à Claude :
-- "Traite les PDFs de mon dossier avec Kolektis"
-- "Analyse ces documents"
-- "Extrais les données de ces factures"
+## Setup (2 minutes)
 
-Claude va automatiquement :
-1. Lister les PDFs de votre dossier
-2. Les envoyer à l'API Kolektis
-3. Sauvegarder les résultats
-4. Répondre à vos questions sur le contenu
+1. **Create a free account** at [kolektis.com/clauder](https://www.kolektis.com/clauder) — includes 50 free documents/month
+2. **Install the skill** in Claude: Customize > Skills > Upload `kolektis-skill.zip`
+3. **Start using it**: Select a folder with PDFs, then ask Claude to process them with Kolektis
 
-## Structure du plugin
+Claude will ask for your API key on first use, then remembers it.
 
-```
-kolektis-plugin/
-├── .claude-plugin/
-│   └── plugin.json          # Manifeste du plugin
-├── .mcp.json                # Config du MCP server
-├── mcp-server/
-│   ├── package.json
-│   └── index.js             # Serveur MCP (API calls)
-├── skills/
-│   └── kolektis/
-│       └── SKILL.md         # Instructions pour Claude
-├── signup-page/
-│   └── index.html           # Template page d'inscription (à héberger)
-└── README.md
-```
+## Plans
 
-## Publication sur le marketplace
+| Plan | Documents/month | Price |
+|------|----------------|-------|
+| Starter | 50 | Free |
+| Pro | 500 | €49/mo |
+| Enterprise | Unlimited | Contact us |
 
-### Option 1 : Marketplace officiel Anthropic
-Soumettez sur https://claude.ai/settings/plugins/submit
+## Examples
 
-### Option 2 : Votre propre marketplace
-Créez un repo GitHub avec un fichier `.claude-plugin/marketplace.json` :
+- "Traite tous les PDFs de ce dossier avec Kolektis"
+- "Process these invoices and give me a summary table"
+- "Extrais les données des courriers et compare les montants"
+- "Analyse ces sinistres et fais-moi un récapitulatif"
 
-```json
-{
-  "name": "kolektis-marketplace",
-  "displayName": "Kolektis Plugins",
-  "plugins": [
-    {
-      "name": "kolektis",
-      "source": "./"
-    }
-  ]
-}
-```
+## Support
 
-Vos clients ajoutent le marketplace avec :
-```
-/plugin marketplace add votre-org/kolektis-marketplace
-```
+- Website: [kolektis.com](https://www.kolektis.com)
+- Email: support@kolektis.com
+- Account & billing: [kolektis.com/account](https://www.kolektis.com/account)
 
-## Développement
+## Built by
 
-```bash
-cd mcp-server/
-npm install
-KOLEKTIS_API_KEY=kol_test123 node index.js
-```
+[Monceau Litis](https://www.monceaulitis.com) — Paris, France
+
+MIT License
