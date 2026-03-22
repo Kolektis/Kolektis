@@ -1,6 +1,6 @@
 {
   "name": "kolektis",
-  "version": "1.1.0",
+  "version": "2.0.0",
   "description": "Analyse automatique de documents PDF — extraction et structuration de données depuis des courriers, factures, sinistres, SDC et tout type de document professionnel. Propulsé par l'API Kolektis.",
   "author": {
     "name": "Monceau Litis",

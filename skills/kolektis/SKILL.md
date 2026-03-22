@@ -13,127 +13,51 @@ description: |
 
 ## Comment ça marche
 
-Cette skill permet de traiter des PDFs via l'API Kolektis (OCR + extraction + structuration).
-Tout passe par des appels HTTP directs — **aucune installation requise côté client**.
+Cette skill orchestre le traitement de PDFs via le serveur MCP Kolektis.
+Le MCP server gère la communication avec l'API — l'authentification se fait
+par clé API, configurée à l'installation du plugin.
 
-L'utilisateur a juste besoin de :
-1. Un compte Kolektis (gratuit : 50 documents/mois)
-2. Sa clé API (obtenue à l'inscription)
+## Outils MCP disponibles
 
-## Configuration de la clé API
+| Outil | Usage |
+|-------|-------|
+| `kolektis_process_pdf` | Traiter un seul PDF (envoie le base64, reçoit le texte extrait + structured) |
+| `kolektis_account_info` | Vérifier le plan, crédits restants, usage du mois |
+| `kolektis_check_credits` | Vérifier rapidement les crédits avant un batch |
 
-### Au premier lancement
+## Workflow
 
-Si aucune clé API n'est configurée, demande à l'utilisateur :
+### Premier contact
 
-> Pour utiliser Kolektis, j'ai besoin de votre clé API.
-> Si vous n'en avez pas encore, créez un compte gratuit sur **https://www.kolektis.com/clauder**
-> (50 documents/mois offerts).
->
-> Une fois inscrit, collez votre clé API ici.
+Quand l'utilisateur demande un traitement de documents :
 
-### Stockage de la clé
+1. Vérifie que l'utilisateur a sélectionné un dossier contenant des PDFs
+2. Liste les PDFs trouvés avec `Glob` ou `ls`
+3. Présente un résumé (nombre, noms des fichiers)
+4. Vérifie les crédits avec `kolektis_check_credits`
+5. Demande confirmation avant de lancer — chaque traitement consomme 1 crédit
 
-Quand l'utilisateur fournit sa clé (format `kol_...`), sauvegarde-la :
+### Traitement
 
-```bash
-mkdir -p ~/.kolektis
-echo "KOLEKTIS_API_KEY=kol_xxxxx" > ~/.kolektis/config
-chmod 600 ~/.kolektis/config
-```
+Pour chaque PDF :
 
-### Récupération de la clé
-
-Au début de chaque workflow Kolektis, lis la clé :
-
-```bash
-cat ~/.kolektis/config 2>/dev/null
-```
-
-Si le fichier n'existe pas → demande la clé à l'utilisateur (voir "Au premier lancement").
-
-## API Reference
-
-**Base URL** : `https://www.kolektis.com`
-
-**Authentification** : Header `X-API-Key: <clé>`
-
-### POST /api/plugin/process — Traiter un PDF
-
-Envoie un PDF et reçoit le texte extrait + données structurées.
-
-```bash
-curl -s -X POST "https://www.kolektis.com/api/plugin/process" \
-  -H "X-API-Key: $KOLEKTIS_API_KEY" \
-  -F "file=@/chemin/vers/document.pdf" \
-  2>/dev/null
-```
-
-**Réponse** (JSON) :
-```json
-{
-  "success": true,
-  "filename": "document.pdf",
-  "extracted": "Texte brut extrait du PDF...",
-  "structured": { "type": "facture", "montant": "1234.56", ... },
-  "credits_remaining": 47
-}
-```
-
-### GET /api/account — Infos du compte
-
-```bash
-curl -s "https://www.kolektis.com/api/account" \
-  -H "X-API-Key: $KOLEKTIS_API_KEY" \
-  2>/dev/null
-```
-
-## Workflow principal
-
-### 1. Initialisation
-
-```
-1. Lis la clé API depuis ~/.kolektis/config
-2. Si pas de clé → demande à l'utilisateur (voir section Configuration)
-3. Vérifie que l'utilisateur a sélectionné un dossier avec des PDFs
-4. Liste les PDFs trouvés avec Glob("**/*.pdf")
-5. Présente un résumé : nombre de fichiers, noms
-6. Demande confirmation avant de traiter (chaque PDF consomme 1 crédit)
-```
-
-### 2. Traitement
-
-Pour chaque PDF, exécute via Bash :
-
-```bash
-# Lire la clé
-KOLEKTIS_API_KEY=$(grep KOLEKTIS_API_KEY ~/.kolektis/config | cut -d= -f2)
-
-# Envoyer le PDF
-RESULT=$(curl -s -X POST "https://www.kolektis.com/api/plugin/process" \
-  -H "X-API-Key: $KOLEKTIS_API_KEY" \
-  -F "file=@/chemin/vers/fichier.pdf" \
-  2>/dev/null)
-
-echo "$RESULT"
-```
+1. Lis le fichier PDF avec l'outil `Read` (il retourne le contenu)
+2. Encode le contenu en base64 via Bash : `base64 -w0 /chemin/vers/fichier.pdf`
+3. Appelle `kolektis_process_pdf` avec le nom du fichier et le base64
+4. Informe l'utilisateur de la progression : "Traitement 3/12 — facture_mars.pdf..."
+5. Après chaque fichier, vérifie qu'il n'y a pas eu d'erreur de crédits
 
 **Important** :
 - Traite les fichiers un par un (pas de parallélisme)
-- Après chaque fichier, vérifie le code de retour HTTP
-- Informe l'utilisateur de la progression : "Traitement 3/12 — facture_mars.pdf..."
+- Si > 10 fichiers : traite par lots de 10, informe de la progression
+- Après chaque lot, vérifie les crédits avec `kolektis_check_credits`
 
-### 3. Sauvegarde des résultats
+### Sauvegarde
 
-Après traitement, sauvegarde dans un sous-dossier `kolektis_results/` du dossier de l'utilisateur :
+Après traitement, sauvegarde les résultats dans un sous-dossier `kolektis_results/` :
 
-```bash
-mkdir -p kolektis_results
-# Pour chaque fichier traité :
-echo "$RESULT" | python3 -m json.tool > "kolektis_results/${FILENAME%.pdf}_result.json"
-```
-
-Crée aussi un récapitulatif `kolektis_results/summary.json` :
+- Un JSON par document : `{nom_original}_result.json`
+- Un récapitulatif `summary.json` :
 
 ```json
 {
@@ -141,20 +65,20 @@ Crée aussi un récapitulatif `kolektis_results/summary.json` :
   "total_files": 6,
   "succeeded": 6,
   "failed": 0,
-  "files": ["doc1.pdf", "doc2.pdf", "..."]
+  "files": ["doc1.pdf", "doc2.pdf"]
 }
 ```
 
-### 4. Exploitation des résultats
+### Exploitation
 
 Une fois les résultats disponibles, l'utilisateur peut poser des questions. Pour répondre :
 
-1. Lis les JSON depuis `kolektis_results/`
+1. Lis les JSON depuis `kolektis_results/` ou utilise les résultats en mémoire
 2. Privilégie les données `structured` (propres) plutôt que `extracted` (brut)
 3. Croise les données de plusieurs documents si nécessaire
-4. Cite toujours les sources (quel document, quelle section)
+4. Cite les sources (quel document, quelle section)
 
-Exemples de questions auxquelles tu peux répondre :
+Exemples de questions :
 - "Quel est le montant total des factures ?"
 - "Résume les points clés de chaque courrier"
 - "Y a-t-il des incohérences entre les documents ?"
@@ -162,29 +86,24 @@ Exemples de questions auxquelles tu peux répondre :
 
 ## Gestion des erreurs
 
-Vérifie le HTTP status code dans chaque réponse curl. Utilise `-w "\n%{http_code}"` si besoin :
+| Erreur MCP | Signification | Action |
+|------------|---------------|--------|
+| "Clé API invalide" | Auth échouée | Dire à l'utilisateur de vérifier sa clé sur kolektis.com/clauder |
+| "Crédits insuffisants" | Plus de crédits | Dire de recharger sur kolektis.com/account/billing |
+| "Erreur serveur" | Problème backend | Réessayer une fois, puis signaler le problème |
 
-```bash
-RESPONSE=$(curl -s -w "\n%{http_code}" -X POST "https://www.kolektis.com/api/plugin/process" \
-  -H "X-API-Key: $KOLEKTIS_API_KEY" \
-  -F "file=@$PDF_PATH" 2>/dev/null)
+## Première utilisation
 
-HTTP_CODE=$(echo "$RESPONSE" | tail -1)
-BODY=$(echo "$RESPONSE" | sed '$d')
-```
+Si le MCP server n'est pas connecté ou que les appels échouent :
 
-| Code | Signification | Action |
-|------|---------------|--------|
-| 200 | Succès | Continuer normalement |
-| 401 | Clé API invalide | "Votre clé API semble invalide. Vérifiez-la sur https://www.kolektis.com/account ou recréez-en une sur https://www.kolektis.com/clauder" |
-| 402 | Crédits insuffisants | "Vous n'avez plus de crédits. Rechargez sur https://www.kolektis.com/account/billing" |
-| 429 | Rate limit | Attendre 30 secondes, réessayer automatiquement une fois |
-| 5xx | Erreur serveur | Réessayer une fois après 10 secondes. Si ça persiste, signaler : "Le serveur Kolektis rencontre un problème. Réessayez plus tard ou contactez support@kolektis.com" |
+1. Explique que le plugin nécessite une clé API Kolektis
+2. Dirige vers `https://www.kolektis.com/clauder` pour créer un compte gratuit (50 docs/mois)
+3. Explique : "Une fois inscrit, copiez votre clé API et ajoutez-la dans les paramètres du plugin Kolektis"
 
 ## Bonnes pratiques
 
 - **Toujours demander confirmation** avant de lancer un traitement (ça consomme des crédits)
-- **Vérifier les crédits** avant un gros batch : `curl -s https://www.kolektis.com/api/account -H "X-API-Key: $KEY"`
+- **Vérifier les crédits** avant un gros batch avec `kolektis_check_credits`
 - **Ne jamais afficher la clé API** dans les réponses à l'utilisateur
 - **Sauvegarder les résultats** systématiquement dans `kolektis_results/`
 - **Gérer les gros volumes** : informer de la progression, proposer de traiter par lots

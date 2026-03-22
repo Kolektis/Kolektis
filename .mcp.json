@@ -1,13 +1,10 @@
 {
   "mcpServers": {
     "kolektis": {
-      "command": "node",
-      "args": ["${CLAUDE_PLUGIN_ROOT}/mcp-server/index.js"],
-      "cwd": "${CLAUDE_PLUGIN_ROOT}",
-      "env": {
-        "KOLEKTIS_API_KEY": "${KOLEKTIS_API_KEY}",
-        "KOLEKTIS_API_URL": "${KOLEKTIS_API_URL:-https://www.kolektis.com}",
-        "NODE_PATH": "${CLAUDE_PLUGIN_DATA}/node_modules"
+      "type": "http",
+      "url": "https://www.kolektis.com/mcp",
+      "headers": {
+        "Authorization": "Bearer ${KOLEKTIS_API_KEY}"
       }
     }
   }
