@@ -1,10 +1,14 @@
 {
   "name": "kolektis",
-  "version": "1.0.0",
-  "displayName": "Kolektis Document Processing",
+  "version": "1.1.0",
   "description": "Analyse automatique de documents PDF — extraction et structuration de données depuis des courriers, factures, sinistres, SDC et tout type de document professionnel. Propulsé par l'API Kolektis.",
-  "author": "Monceau Litis",
+  "author": {
+    "name": "Monceau Litis",
+    "email": "dev@monceaulitis.com",
+    "url": "https://www.kolektis.com"
+  },
   "homepage": "https://www.kolektis.com",
+  "repository": "https://github.com/Kolektis/Kolektis",
   "license": "MIT",
   "keywords": [
     "kolektis",
@@ -12,26 +16,6 @@
     "document-processing",
     "extraction",
     "structured-data",
-    "ocr",
-    "sinistres",
-    "factures"
-  ],
-  "capabilities": {
-    "skills": true,
-    "mcpServers": true
-  },
-  "configuration": {
-    "KOLEKTIS_API_KEY": {
-      "type": "string",
-      "description": "Votre clé API Kolektis. Obtenez-la sur https://www.kolektis.com/signup",
-      "required": true,
-      "secret": true
-    },
-    "KOLEKTIS_API_URL": {
-      "type": "string",
-      "description": "URL de l'API Kolektis (ne changez pas sauf indication contraire)",
-      "required": false,
-      "default": "https://www.kolektis.com"
-    }
-  }
+    "ocr"
+  ]
 }

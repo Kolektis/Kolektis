@@ -30,7 +30,7 @@ import FormData from "form-data";
 const API_KEY = process.env.KOLEKTIS_API_KEY;
 const API_BASE = process.env.KOLEKTIS_API_URL || "https://www.kolektis.com";
 
-const PROCESS_ENDPOINT = `${API_BASE}/api/process-aurelien`;
+const PROCESS_ENDPOINT = `${API_BASE}/api/plugin/process`;
 const ACCOUNT_ENDPOINT = `${API_BASE}/api/account`;
 
 if (!API_KEY) {
